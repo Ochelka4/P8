@@ -1,2 +1,2 @@
 # P8
-Code included in the 8. semester project
+Code for the 8. semester project in EMSD
