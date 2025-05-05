@@ -1,5 +1,5 @@
 # P8
-Code for the 8. semester project in EMSD 
+Code for the 2. semester project in EMSD. It includes the code for the Nucleo board.
 
 
-Main.c er Nucleo koden
+Main.c er Nucleo koden.
