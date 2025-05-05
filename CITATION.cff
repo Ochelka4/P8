@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Bau"
+  given-names: "Alexander John"
+- family-names: "H. Jensen"
+  given-names: "Anton E."
+- family-names: "Dieter Pedersen"
+  given-names: "Daniel"
+- family-names: "Versteegen"
+  given-names: "Robert"
+- family-names: "J. Ochelka"
+  given-names: "Thomas"
+title: "Dynamic Load Reduction in Offshore Crane by Control of Asynchronous Motor and Drive"
+version: 1.0.0
+doi: 10.5281/zenodo.1234
+date-released: 2025-05-05
+url: "https://github.com/Ochelka4/P8"
