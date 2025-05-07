@@ -45,7 +45,7 @@ ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
 
-TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
 
@@ -60,18 +60,15 @@ double DC_a;
 double DC_b;
 double DC_c;
 float pi = 3.1415;
-float freq_sin = 0;
+float freq_pwm = 0;
 uint32_t N_speed = 0;
-float V_RL = 0;
-float V_PP = 0;
-float boost = 1;
-float V_final = 0;
+float U_RL = 0;
+float U_PP = 0;
 uint16_t sector;
 uint16_t V_DC = 540;
 float t = 0;
 double T_s = 0.0004;
 uint32_t ReadADC;
-uint32_t f_clock = 72000000;
 
 
 /* USER CODE END PV */
@@ -79,13 +76,13 @@ uint32_t f_clock = 72000000;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USB_OTG_FS_PCD_Init(void);
-static void MX_TIM14_Init(void);
-static void MX_TIM13_Init(void);
-static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_TIM1_Init(void);
+static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_TIM14_Init(void);
+static void MX_TIM3_Init(void);
+static void MX_TIM13_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -124,13 +121,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_OTG_FS_PCD_Init();
-  MX_TIM14_Init();
-  MX_TIM13_Init();
-  MX_ADC1_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
-  MX_TIM1_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_TIM14_Init();
+  MX_TIM3_Init();
+  MX_TIM13_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
@@ -317,92 +314,69 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief TIM1 Initialization Function
+  * @brief TIM3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM1_Init(void)
+static void MX_TIM3_Init(void)
 {
 
-  /* USER CODE BEGIN TIM1_Init 0 */
+  /* USER CODE BEGIN TIM3_Init 0 */
 
-  /* USER CODE END TIM1_Init 0 */
+  /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
-  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
-  /* USER CODE BEGIN TIM1_Init 1 */
+  /* USER CODE BEGIN TIM3_Init 1 */
 
-  //Needs to be 10 tines faster than tim14
-
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 6 - 1;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
-  htim1.Init.Period = 10667 - 1;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 72 - 1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
+  htim3.Init.Period = 500 - 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
-  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
-  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.BreakFilter = 0;
-  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  sBreakDeadTimeConfig.Break2Filter = 0;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
+  /* USER CODE BEGIN TIM3_Init 2 */
 
-  /* USER CODE END TIM1_Init 2 */
-  HAL_TIM_MspPostInit(&htim1);
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -424,7 +398,7 @@ static void MX_TIM13_Init(void)
   htim13.Instance = TIM13;
   htim13.Init.Prescaler = 72-1;
   htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim13.Init.Period = 10000-1;
+  htim13.Init.Period = 1000-1;
   htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
@@ -453,9 +427,9 @@ static void MX_TIM14_Init(void)
 
   /* USER CODE END TIM14_Init 1 */
   htim14.Instance = TIM14;
-  htim14.Init.Prescaler = 5 - 1;
+  htim14.Init.Prescaler = 72 - 1;
   htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 21333 - 1;
+  htim14.Init.Period = 500 - 1;
   htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
@@ -555,7 +529,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
@@ -595,14 +568,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
@@ -674,9 +639,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
             {
             	HAL_TIM_Base_Start(&htim13);
             	HAL_TIM_Base_Start_IT(&htim14);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
                 timer_active = 1;
 
@@ -685,9 +650,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
             {
             	HAL_TIM_Base_Stop(&htim13);
             	HAL_TIM_Base_Stop_IT(&htim14);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
                 timer_active = 0;
             }
@@ -729,15 +694,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     if (hadc->Instance == ADC1)
     {
         uint32_t readADC = HAL_ADC_GetValue(hadc);
-         N_speed = readADC * 1500/4096; // Calculate new speed based on readADC
-         //N_speed = 1500;
-         freq_sin = 4*N_speed/120;
-         V_RL = freq_sin*8;
-         V_PP = V_RL*sqrt(2)/sqrt(3);
+         N_speed = readADC * 1425/4096; // Calculate new speed based on readADC
 
-         HAL_TIM_Base_Stop(&htim13);
-         __HAL_TIM_SET_PRESCALER(&htim13, (f_clock)/(htim13.Init.Period*freq_sin)); // New prescaler
-         HAL_TIM_Base_Start(&htim13);
+         freq_pwm = 4*N_speed/120;
+         U_RL = freq_pwm*8;
+         U_PP = U_RL*sqrt(2)/sqrt(3);
+
+         __HAL_TIM_SET_PRESCALER(&htim13, (72 * 1000000)/(htim13.Init.Period*freq_pwm)); // New prescaler
          //__HAL_TIM_SET_COUNTER(&htim13, 0);  // Reset counter
     }
 }
@@ -753,26 +716,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
   {
 	  //   __HAL_TIM_GET_COUNTER(&htim13)
 	  	  	 float timestamp = __HAL_TIM_GET_COUNTER(&htim13); // tager nuværende tidspunkt i time ticks
-	  	  	  t = timestamp / ((htim13.Init.Period + 1)*freq_sin);
-
-	  	  	 //if (freq_sin < 10.0) V_final = V_boosted;
-	  	  	 //else V_final = V_RL;
-	  	  	 // V_final = V_RL + 30;
-
-	  	  	  if (freq_sin <= 20.0) boost = 0.03; //Boost at 3% at 20 Hz
-	  	  	  else if (freq_sin >= 30.0) boost = 0.0; //Boost at 0% at 30 Hz
-	  	  	  else {
-	  	  		  float fade = (30.0 - freq_sin) / 10.0;
-	  	  		  boost = 0.03 * fade;
-	  	  	  }
-
-	  	  	float V_boost = 230*boost;
-	  	    V_final = V_boost + (V_RL - V_boost) * freq_sin/50;
-	  	  	if (V_final > 400) V_final = 400; //Overcurrent protection
-
-	  	  	 float s_a = V_final*sinf(2.0*pi*freq_sin*t);
-	 		 float s_b = V_final*sinf(2.0*pi*freq_sin*t-2.0*pi/3.0);
-	 		 float s_c = V_final*sinf(2.0*pi*freq_sin*t+2.0*pi/3.0);
+	  	  	  t = timestamp / ((htim13.Init.Period + 1)*freq_pwm);
+	  	  	 float s_a = U_PP*sinf(2.0*pi*freq_pwm*t);
+	 		 float s_b = U_PP*sinf(2.0*pi*freq_pwm*t-2.0*pi/3.0);
+	 		 float s_c = U_PP*sinf(2.0*pi*freq_pwm*t+2.0*pi/3.0);
 
 	 		  //Clarke transformation
 	 		  float s_alpha = (2.0/3.0)*(s_a - (1.0/2.0)*(s_b + s_c));
@@ -789,7 +736,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 	 		  //Modulation Index Calculator
 	 		  float M = SV_m/(V_DC/sqrt(3.0));
-	 		  if (M > 1.0) M = 1.0; //Overflow protection
 
 	 		  //Sector Calculator
 	 		  if (0.0 <= SV_theta && SV_theta < pi/3.0)
@@ -818,8 +764,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 	 		  }
 
 	 		  float sector_theta = SV_theta - (sector-1.0)*(pi/3.0);
-
-
 
 	 		  //Dwell Time Calculator
 	 		  float T_1 = T_s*M*sinf(pi/3.0 - sector_theta);
@@ -862,27 +806,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 	 		  	DC_b = T_0/(2*T_s) * 100;
 	 		  	DC_c = (2*T_1 + T_0)/(2*T_s) * 100;
 	 		  }
-
-	 		//Boarder
-
-
-	 		//Dead time
-	 		uint32_t dead_time_ticks = 144;  // Since 1 tick = 1/72 MHz = ~13.8 ns
-
-	 		//Converting to ticks
-	 		double desired_DC_a_ticks = (DC_a * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
-	 		double desired_DC_b_ticks = (DC_b * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
-	 		double desired_DC_c_ticks = (DC_c * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
-
-	 		//Apply dead time compensation
-	 		if (desired_DC_a_ticks > dead_time_ticks) desired_DC_a_ticks -= dead_time_ticks; else desired_DC_a_ticks = 0;  // Prevent underflow
-	 		if (desired_DC_b_ticks > dead_time_ticks) desired_DC_b_ticks -= dead_time_ticks; else desired_DC_b_ticks = 0;  // Prevent underflow
-	 		if (desired_DC_c_ticks > dead_time_ticks) desired_DC_c_ticks -= dead_time_ticks; else desired_DC_c_ticks = 0;  // Prevent underflow
-
-	 		//Update PWM channels
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, desired_DC_a_ticks);
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, desired_DC_b_ticks);
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, desired_DC_c_ticks);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (DC_a * (htim3.Init.Period + 1)) / 100);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, (DC_b * (htim3.Init.Period + 1)) / 100);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, (DC_c * (htim3.Init.Period + 1)) / 100);
 
   }
 }
