@@ -646,6 +646,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
                 timer_active = 1;
 
             }
@@ -657,6 +658,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+                DC_a = 0;
+                DC_b = 0;
+                DC_c = 0;
                 timer_active = 0;
             }
     	}
@@ -696,9 +700,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc->Instance == ADC1)
     {
-        uint32_t readADC = HAL_ADC_GetValue(hadc);
-        // N_speed = readADC * 1500/4096; // Calculate new speed based on readADC
-         N_speed = 800;
+         uint32_t readADC = HAL_ADC_GetValue(hadc);
+         N_speed = readADC * 1500/4096; // Calculate new speed based on readADC
+         //N_speed = 800;
          freq_sin = 4*N_speed/120;
          V_RL = freq_sin*8;
          V_PP = V_RL*sqrt(2)/sqrt(3);
@@ -813,38 +817,38 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 	 		  if (sector == 1)
 	 		  {
-	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
-	 			DC_a = (2*T_2 + T_0)/(2*T_s) * 100;
+	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_b = (2*T_2 + T_0)/(2*T_s) * 100;
 	 			DC_c = T_0/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 2)
 	 		  {
-	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
-	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_a = (2*T_1 + T_0)/(2*T_s) * 100;
+	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 			DC_c = T_0/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 3)
 	 		  {
-	 			DC_b = T_0/(2*T_s) * 100;
-	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_a = T_0/(2*T_s) * 100;
+	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 			DC_c = (2*T_2 + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 4)
 	 		  {
-	 			DC_b = T_0/(2*T_s) * 100;
-	 			DC_a = (2*T_1 + T_0)/(2*T_s) * 100;
+	 			DC_a = T_0/(2*T_s) * 100;
+	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
 	 			DC_c = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 5)
 	 		  {
-	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
-	 			DC_a = T_0/(2*T_s) * 100;
+	 			DC_a = (2*T_2 + T_0)/(2*T_s) * 100;
+	 			DC_b = T_0/(2*T_s) * 100;
 	 			DC_c = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 6)
 	 		  {
-	 		  	DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
-	 		  	DC_a = T_0/(2*T_s) * 100;
+	 		  	DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 		  	DC_b = T_0/(2*T_s) * 100;
 	 		  	DC_c = (2*T_1 + T_0)/(2*T_s) * 100;
 	 		  }
 
