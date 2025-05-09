@@ -45,7 +45,7 @@ ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
 
-TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
 
@@ -60,7 +60,7 @@ double DC_a;
 double DC_b;
 double DC_c;
 float pi = 3.1415;
-float freq_sin = 0;
+float freq_sin = 0.1;
 uint32_t N_speed = 0;
 float V_RL = 0;
 float V_PP = 0;
@@ -72,8 +72,7 @@ uint16_t V_DC = 540;
 float t = 0;
 double T_s = 0.0001;
 uint32_t ReadADC;
-uint32_t f_clock = 72000000;
-
+double f_clock = 72000000.0;
 
 /* USER CODE END PV */
 
@@ -86,7 +85,7 @@ static void MX_TIM13_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_TIM1_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -131,7 +130,7 @@ int main(void)
   MX_ADC1_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
-  MX_TIM1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
@@ -318,92 +317,69 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief TIM1 Initialization Function
+  * @brief TIM3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM1_Init(void)
+static void MX_TIM3_Init(void)
 {
 
-  /* USER CODE BEGIN TIM1_Init 0 */
+  /* USER CODE BEGIN TIM3_Init 0 */
 
-  /* USER CODE END TIM1_Init 0 */
+  /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
-  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
-  /* USER CODE BEGIN TIM1_Init 1 */
+  /* USER CODE BEGIN TIM3_Init 1 */
 
-  //Needs to be 10 tines faster than tim14
-
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 18 - 1;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
-  htim1.Init.Period = 400 - 1;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED3;
+  htim3.Init.Period = 7200 - 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
-  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
-  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.BreakFilter = 0;
-  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  sBreakDeadTimeConfig.Break2Filter = 0;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
+  /* USER CODE BEGIN TIM3_Init 2 */
 
-  /* USER CODE END TIM1_Init 2 */
-  HAL_TIM_MspPostInit(&htim1);
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -556,7 +532,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
@@ -596,14 +571,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
@@ -674,10 +641,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
             if (timer_active == 0)
             {
             	HAL_TIM_Base_Start(&htim13);
-            	HAL_TIM_Base_Start_IT(&htim1);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-                HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+            	HAL_TIM_Base_Start_IT(&htim3);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+                HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
                 timer_active = 1;
 
@@ -685,10 +652,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
             else
             {
             	HAL_TIM_Base_Stop(&htim13);
-            	HAL_TIM_Base_Stop_IT(&htim1);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-                HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+            	HAL_TIM_Base_Stop_IT(&htim3);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+                HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
                 timer_active = 0;
             }
@@ -736,9 +703,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
          V_RL = freq_sin*8;
          V_PP = V_RL*sqrt(2)/sqrt(3);
 
-         HAL_TIM_Base_Stop(&htim13);
-         __HAL_TIM_SET_PRESCALER(&htim13, (f_clock)/(htim13.Init.Period*freq_sin)); // New prescaler
-         HAL_TIM_Base_Start(&htim13);
+         //HAL_TIM_Base_Stop(&htim13);
+         //__HAL_TIM_SET_PRESCALER(&htim13, (f_clock)/(htim13.Init.Period*freq_sin)); // New prescaler
+         //HAL_TIM_Base_Start(&htim13);
          //__HAL_TIM_SET_COUNTER(&htim13, 0);  // Reset counter
     }
 }
@@ -750,15 +717,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to calculate and change the duty cycle
 {
 	 static int tick_count = 0;
+	 static double t = 0.0;
+	 static double t_step = 1.0/(72000000.0/(7200));
+
   // Check which version of the timer triggered this callback and toggle LED
-  if (htim == &htim1) {
-	  tick_count++;
-	  if (tick_count >= 5) {
+  if (htim == &htim3) {
+	  tick_count += 1;
+	  if (tick_count >= 10) {
 		  tick_count = 0;
 
 	  //   __HAL_TIM_GET_COUNTER(&htim13)
 	  	  	  //float timestamp = __HAL_TIM_GET_COUNTER(&htim13); // tager nuværende tidspunkt i time ticks
-	  	  	  t = __HAL_TIM_GET_COUNTER(&htim13) / ((htim13.Init.Period + 1)*freq_sin);
+	  	  	 // t = __HAL_TIM_GET_COUNTER(&htim13) / ((htim13.Init.Period + 1)*freq_sin);
 	  	  	  // t = __HAL_TIM_GET_COUNTER(&htim13) / (1.0e6);
 	  	  	 // t = __HAL_TIM_GET_COUNTER(&htim13) / 1000000.0;
 	  	  	 //if (freq_sin < 10.0) V_final = V_boosted;
@@ -789,6 +759,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 	 		  //Space Vector Coordinates Calculator
 	 		  float SV_theta = atan2f(s_beta, s_alpha);
+
+	 		// static float filtered_theta = 0.0;
+	 		// float alpha = 0.5;  // Smoothing factor (tune as needed)
+	 		// filtered_theta = (1.0 - alpha) * filtered_theta + alpha * SV_theta;
+	 		// SV_theta = filtered_theta;
+
 	 		  if (SV_theta < 0.0)
 	 		  {
 	 		  	SV_theta = SV_theta + 2.0*pi;
@@ -837,38 +813,38 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 	 		  if (sector == 1)
 	 		  {
-	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
-	 			DC_b = (2*T_2 + T_0)/(2*T_s) * 100;
+	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_a = (2*T_2 + T_0)/(2*T_s) * 100;
 	 			DC_c = T_0/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 2)
 	 		  {
-	 			DC_a = (2*T_1 + T_0)/(2*T_s) * 100;
-	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
+	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 			DC_c = T_0/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 3)
 	 		  {
-	 			DC_a = T_0/(2*T_s) * 100;
-	 			DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 			DC_b = T_0/(2*T_s) * 100;
+	 			DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 			DC_c = (2*T_2 + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 4)
 	 		  {
-	 			DC_a = T_0/(2*T_s) * 100;
-	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
+	 			DC_b = T_0/(2*T_s) * 100;
+	 			DC_a = (2*T_1 + T_0)/(2*T_s) * 100;
 	 			DC_c = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 5)
 	 		  {
-	 			DC_a = (2*T_1 + T_0)/(2*T_s) * 100;
-	 			DC_b = T_0/(2*T_s) * 100;
+	 			DC_b = (2*T_1 + T_0)/(2*T_s) * 100;
+	 			DC_a = T_0/(2*T_s) * 100;
 	 			DC_c = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
 	 		  }
 	 		  else if (sector == 6)
 	 		  {
-	 		  	DC_a = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
-	 		  	DC_b = T_0/(2*T_s) * 100;
+	 		  	DC_b = (2*(T_1 + T_2) + T_0)/(2*T_s) * 100;
+	 		  	DC_a = T_0/(2*T_s) * 100;
 	 		  	DC_c = (2*T_1 + T_0)/(2*T_s) * 100;
 	 		  }
 
@@ -876,25 +852,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 
 	 		//Dead time
-	 		uint32_t dead_time_ticks = 144;  // Since 1 tick = 1/72 MHz = ~13.8 ns
+	 		//uint32_t dead_time_ticks = 144;  // Since 1 tick = 1/72 MHz = ~13.8 ns
 
 	 		//Converting to ticks
-	 		double desired_DC_a_ticks = (DC_a * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
-	 		double desired_DC_b_ticks = (DC_b * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
-	 		double desired_DC_c_ticks = (DC_c * (__HAL_TIM_GET_AUTORELOAD(&htim1) + 1)) / 100;
+	 		double desired_DC_a_ticks = (DC_a * (__HAL_TIM_GET_AUTORELOAD(&htim3) + 1)) / 100;
+	 		double desired_DC_b_ticks = (DC_b * (__HAL_TIM_GET_AUTORELOAD(&htim3) + 1)) / 100;
+	 		double desired_DC_c_ticks = (DC_c * (__HAL_TIM_GET_AUTORELOAD(&htim3) + 1)) / 100;
 
 	 		//Apply dead time compensation
-	 		if (desired_DC_a_ticks > dead_time_ticks) desired_DC_a_ticks -= dead_time_ticks; else desired_DC_a_ticks = 0;  // Prevent underflow
-	 		if (desired_DC_b_ticks > dead_time_ticks) desired_DC_b_ticks -= dead_time_ticks; else desired_DC_b_ticks = 0;  // Prevent underflow
-	 		if (desired_DC_c_ticks > dead_time_ticks) desired_DC_c_ticks -= dead_time_ticks; else desired_DC_c_ticks = 0;  // Prevent underflow
+	 		//if (desired_DC_a_ticks > dead_time_ticks) desired_DC_a_ticks -= dead_time_ticks; else desired_DC_a_ticks = 0;  // Prevent underflow
+	 		//if (desired_DC_b_ticks > dead_time_ticks) desired_DC_b_ticks -= dead_time_ticks; else desired_DC_b_ticks = 0;  // Prevent underflow
+	 		//if (desired_DC_c_ticks > dead_time_ticks) desired_DC_c_ticks -= dead_time_ticks; else desired_DC_c_ticks = 0;  // Prevent underflow
 
 	 		//Update PWM channels
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, desired_DC_a_ticks);
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, desired_DC_b_ticks);
-	 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, desired_DC_c_ticks);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, desired_DC_a_ticks);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, desired_DC_b_ticks);
+	 		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, desired_DC_c_ticks);
+	  }
+	  t += t_step;   //Manuel timer setup
+	    	  if (t >= 1/freq_sin) t = 0.0;
 	  }
   }
-}
+
 
 /* USER CODE END 4 */
 
