@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "math.h"
+#include "string.h"
+#include "stdio.h"
 
 /* USER CODE END Includes */
 
@@ -43,13 +45,9 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
-I2C_HandleTypeDef hi2c1;
-
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim13;
-TIM_HandleTypeDef htim14;
 
-UART_HandleTypeDef huart3;
+UART_HandleTypeDef huart2;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
@@ -61,7 +59,8 @@ double DC_b;
 double DC_c;
 float pi = 3.1415;
 float freq_sin = 0.1;
-uint32_t N_speed = 0;
+uint32_t N_current = 0;
+uint32_t N_target = 0;
 float V_RL = 0;
 float V_PP = 0;
 float boost = 1;
@@ -73,6 +72,13 @@ float t = 0;
 double T_s = 0.0001;
 uint32_t ReadADC;
 double f_clock = 72000000.0;
+float s_a;
+float s_b;
+float s_c;
+uint16_t Volt = 0;
+int direction = 1;
+
+
 
 /* USER CODE END PV */
 
@@ -80,12 +86,9 @@ double f_clock = 72000000.0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
-static void MX_TIM14_Init(void);
-static void MX_TIM13_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -125,16 +128,23 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USB_OTG_FS_PCD_Init();
-  MX_TIM14_Init();
-  MX_TIM13_Init();
   MX_ADC1_Init();
-  MX_I2C1_Init();
-  MX_USART3_UART_Init();
   MX_TIM3_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+  //HAL_UART_Receive_IT(&huart2, &rx_char, 1);  // Enable RX interrupt
+
+  //HAL_UART_Transmit(&huart2, (uint8_t*)"Console ready\r\n", 9, 1);
+
+
+
+
+
+
+
   /*
   HAL_TIM_Base_Start(&htim13);
   HAL_TIM_Base_Start_IT(&htim14);
@@ -151,14 +161,9 @@ int main(void)
   while (1)
   {
 	  HAL_ADC_Start_IT(&hadc1);
-	 // HAL_ADC_PollForConversion(&hadc1,1000);
-	 // HAL_ADC_Stop_IT(&hadc1);
-	  HAL_Delay(1000);
-	//  HAL_ADC_Start(&hadc1);
-	 //
-	 //     readADC = HAL_ADC_GetValue(&hadc1);
-	 //
-	 //     HAL_Delay(1000);
+	  HAL_Delay(500);
+
+
 
     /* USER CODE END WHILE */
 
@@ -269,54 +274,6 @@ static void MX_ADC1_Init(void)
 }
 
 /**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00808CD2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -384,99 +341,37 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief TIM13 Initialization Function
+  * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM13_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-  /* USER CODE BEGIN TIM13_Init 0 */
+  /* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END TIM13_Init 0 */
+  /* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN TIM13_Init 1 */
+  /* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END TIM13_Init 1 */
-  htim13.Instance = TIM13;
-  htim13.Init.Prescaler = 72-1;
-  htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim13.Init.Period = 1000-1;
-  htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 14400;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM13_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END TIM13_Init 2 */
-
-}
-
-/**
-  * @brief TIM14 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM14_Init(void)
-{
-
-  /* USER CODE BEGIN TIM14_Init 0 */
-
-  /* USER CODE END TIM14_Init 0 */
-
-  /* USER CODE BEGIN TIM14_Init 1 */
-
-  /* USER CODE END TIM14_Init 1 */
-  htim14.Instance = TIM14;
-  htim14.Init.Prescaler = 6 - 1;
-  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 21334- 1;
-  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM14_Init 2 */
-
-  /* USER CODE END TIM14_Init 2 */
-
-}
-
-/**
-  * @brief USART3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART3_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART3_Init 0 */
-
-  /* USER CODE END USART3_Init 0 */
-
-  /* USER CODE BEGIN USART3_Init 1 */
-
-  /* USER CODE END USART3_Init 1 */
-  huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
-  huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART3_Init 2 */
-
-  /* USER CODE END USART3_Init 2 */
+  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -558,13 +453,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RMII_REF_CLK_Pin RMII_MDIO_Pin */
-  GPIO_InitStruct.Pin = RMII_REF_CLK_Pin|RMII_MDIO_Pin;
+  /*Configure GPIO pin : RMII_REF_CLK_Pin */
+  GPIO_InitStruct.Pin = RMII_REF_CLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(RMII_REF_CLK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA4 PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
@@ -588,6 +483,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(RMII_TXD1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : STLK_RX_Pin STLK_TX_Pin */
+  GPIO_InitStruct.Pin = STLK_RX_Pin|STLK_TX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /*Configure GPIO pin : USB_PowerSwitchOn_Pin */
   GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -608,6 +511,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -640,7 +551,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
 
             if (timer_active == 0)
             {
-            	HAL_TIM_Base_Start(&htim13);
+            	//HAL_TIM_Base_Start(&htim13);
             	HAL_TIM_Base_Start_IT(&htim3);
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -652,15 +563,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)    //Start and Stop button ITR
             }
             else
             {
-            	HAL_TIM_Base_Stop(&htim13);
+            	DC_a = 0;
+            	DC_b = 0;
+            	DC_c = 0;
+            	N_current = 0;
+            	//HAL_TIM_Base_Stop(&htim13);
             	HAL_TIM_Base_Stop_IT(&htim3);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-                DC_a = 0;
-                DC_b = 0;
-                DC_c = 0;
                 timer_active = 0;
             }
     	}
@@ -701,9 +613,26 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     if (hadc->Instance == ADC1)
     {
          uint32_t readADC = HAL_ADC_GetValue(hadc);
-         N_speed = readADC * 1500/4096; // Calculate new speed based on readADC
-         //N_speed = 800;
-         freq_sin = 4*N_speed/120;
+         //N_target = readADC * 1500/4096; // Calculate new speed based on readADC
+         Volt = readADC * 400/4096; // Calculate volt from potentiometer
+         if (Volt < 2) Volt = 1;
+
+         N_current = 1500 ;
+         /*
+         float max_step = 25;      // Ramp of speed control
+         if (N_current < N_target) {
+                 N_current += max_step;
+                 if (N_current > N_target) N_current = N_target;
+         } else if (N_current > N_target) {
+                 N_current -= max_step;
+                 if (N_current < N_target) N_current = N_target;
+             }    */
+
+     if (N_current < 11) N_current = 0; //Sets the speed to 0 if the RPM current is less than 11
+     if (N_current > 1489) N_current = 1500; //Sets the speed to 1500 if the RPM current is more than 1489
+
+         freq_sin = 4*N_current/120;
+
          V_RL = freq_sin*8;
          V_PP = V_RL*sqrt(2)/sqrt(3);
 
@@ -713,6 +642,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
          //__HAL_TIM_SET_COUNTER(&htim13, 0);  // Reset counter
     }
 }
+
 
 
 
@@ -727,7 +657,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
   // Check which version of the timer triggered this callback and toggle LED
   if (htim == &htim3) {
 	  tick_count += 1;
-	  if (tick_count >= 10) {
+	  if (tick_count >= 2) {
 		  tick_count = 0;
 
 	  //   __HAL_TIM_GET_COUNTER(&htim13)
@@ -739,10 +669,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 	  	  	 //else V_final = V_RL;
 	  	  	 // V_final = V_RL + 30;
 
-	  	  	  if (freq_sin <= 20.0) boost = 0.03; //Boost at 3% at 20 Hz
-	  	  	  else if (freq_sin >= 30.0) boost = 0.0; //Boost at 0% at 30 Hz
+	  	  	  if (freq_sin <= 10.0) boost = 0.03; //Boost at 3% at 20 Hz
+	  	  	  else if (freq_sin >= 20.0) boost = 0.0; //Boost at 0% at 30 Hz
 	  	  	  else {
-	  	  		  float fade = (30.0 - freq_sin) / 10.0;
+	  	  		  float fade = (20.0 - freq_sin) / 10.0;
 	  	  		  boost = 0.03 * fade;
 	  	  	  }
 
@@ -751,11 +681,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 
 	  	  	if (V_boost > 400) V_boost = 400; //Over current protection
 
-	  	    float angle = 2.0*pi*freq_sin*t;
+	  	    float phase = 2.0*pi*freq_sin*t;
 
-	  	  	 float s_a = V_boost*sinf(angle);
-	 		 float s_b = V_boost*sinf(angle-2.0*pi/3.0);
-	 		 float s_c = V_boost*sinf(angle+2.0*pi/3.0);
+	  	  	 s_a = Volt * sinf(phase);
+	 		 s_b = Volt * sinf(phase-(direction * 2.0*pi/3.0));
+	 		 s_c = Volt * sinf(phase-(direction * 4.0*pi/3.0));
 
 	 		  //Clarke transformation
 	 		  float s_alpha = (2.0/3.0)*(s_a - (1.0/2.0)*(s_b + s_c));
@@ -764,10 +694,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)      //Timer ITR to 
 	 		  //Space Vector Coordinates Calculator
 	 		  float SV_theta = atan2f(s_beta, s_alpha);
 
-	 		// static float filtered_theta = 0.0;
-	 		// float alpha = 0.5;  // Smoothing factor (tune as needed)
-	 		// filtered_theta = (1.0 - alpha) * filtered_theta + alpha * SV_theta;
-	 		// SV_theta = filtered_theta;
 
 	 		  if (SV_theta < 0.0)
 	 		  {
