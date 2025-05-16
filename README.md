@@ -4,5 +4,5 @@ This project includes all the code from the 2. semester project in EMSD by group
 ## PWM Signals
 This code configures a nucleo board to determine PWM signals for the VFD. It is therefore written in C code and the PWM signals is determined using V/F control. The code also includes the control for the peripherals of the Nucleo board, which includes: ADC, GPIO, a timer and interrupts. 
 
-The main for the code is located in: PWM signals/PWM signals 2/Core/Src/Main
+The main for the code is located in: PWM signals/Core/Src/Main
 
