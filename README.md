@@ -6,3 +6,5 @@ This code configures a nucleo board to determine PWM signals for the VFD. It is 
 
 The main for the code is located in: PWM signals/Core/Src/Main
 
+## SVPWM
+This is a matlab file that simulates SVPWM. It uses a reference AC signal, along with a DC voltage and modulation period, to generate switching sequences for the VFD that modulate the reference signal.
