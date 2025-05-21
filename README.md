@@ -1,4 +1,4 @@
-## Motor control through a VFD
+## Control of Asynchronous motor and drive
 This project includes all the code from the 2. semester project in EMSD by group 2.002.
 
 ## PWM Signals
