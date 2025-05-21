@@ -24,6 +24,7 @@
 #include "math.h"
 #include "string.h"
 #include "stdio.h"
+#include <stdbool.h>
 
 /* USER CODE END Includes */
 
@@ -47,8 +48,6 @@ ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim3;
 
-UART_HandleTypeDef huart2;
-
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
@@ -60,10 +59,10 @@ double DC_a; //Duty cycle A
 double DC_b; //Duty cycle B
 double DC_c;  //Duty cycle C
 float pi = 3.1415; //PI
-float freq_sin = 0.1; // frequency with a 2.25 factor for sine wave calculation
-float freq_sine; // actual frequency for voltage calculation
-uint32_t N_current = 0; // Current speed ramped towards target speed
-uint32_t N_target = 0;  // Target speed
+float freq_sin; // frequency with a 2.25 factor for sine wave calculation
+float freq_sine = 0.1; // actual frequency for voltage calculation
+volatile float N_current = 0; // Current speed ramped towards target speed
+float N_target = 0;  // Target speed
 float V_RL = 0; // RMS line to line voltage
 float V_PP = 0; // peak phase voltage
 float boost = 1;  // boost procent 
@@ -77,6 +76,7 @@ double f_clock = 72000000.0;  //Nucleo boards clock frequency
 uint16_t Volt = 0;    // Voltage variable for testing amplitude of sine wave
 int direction1 = 2; // Default direction (Up)
 int direction2 = 4; // Default direction (Up)
+uint32_t startTime;
 
 /* USER CODE END PV */
 
@@ -86,13 +86,13 @@ static void MX_GPIO_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 
 /* USER CODE END 0 */
 
@@ -110,8 +110,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-
-	HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -129,7 +128,6 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_ADC1_Init();
   MX_TIM3_Init();
-  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);                   //Red LED
@@ -143,6 +141,7 @@ int main(void)
   while (1)
   {
 	  HAL_ADC_Start_IT(&hadc1); //Potentiometer trigger
+	  HAL_Delay(20); //
 
 	  if (toggle_ISR3 == 1)   // Reset pulse signal | Needed here as HAL_Delay doesn't work in ISR
 	  {
@@ -151,9 +150,15 @@ int main(void)
 		  HAL_Delay(100);
 		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);  //Reset signal pulse off
 	  }
-	  HAL_Delay(250); // Delay by quarter second
 
-
+	  /*
+	     //Code used for validation of the system
+	  uint32_t time_current = HAL_GetTick() - startTime;
+	  uint32_t rampstart = 1000;
+	  uint32_t rampend = 3000;
+	  if (time_current >= rampstart) N_target = 1183;
+	  if (time_current >= rampend) N_target = 0;
+		*/
 
     /* USER CODE END WHILE */
 
@@ -331,41 +336,6 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 9600;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
   * @brief USB_OTG_FS Initialization Function
   * @param None
   * @retval None
@@ -451,6 +421,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(RMII_REF_CLK_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PA2 PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : PA4 PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -508,12 +486,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
   /*Configure GPIO pin : PB8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -557,6 +529,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)  // Button ITR
 
             if (toggle_ISR1 == 0)
             {
+            	startTime = HAL_GetTick();
             	HAL_TIM_Base_Start_IT(&htim3);
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
                 HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -571,7 +544,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)  // Button ITR
             	DC_b = 0;
             	DC_c = 0;
             	N_current = 0;
-         	HAL_TIM_Base_Stop_IT(&htim3);
+            	HAL_TIM_Base_Stop_IT(&htim3);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
                 HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
@@ -626,35 +599,33 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc->Instance == ADC1)
     {
-         uint32_t readADC = HAL_ADC_GetValue(hadc);  //Read ADC signal from potentiometer
-         N_target = readADC * 1500/4096; // Calculate new speed based on readADC
+         uint16_t readADC = HAL_ADC_GetValue(hadc);  //Read ADC signal from potentiometer
+         N_target = readADC * 1183 / 4096; // Calculate new speed based on readADC
+
+         //Used for amplitude testing
          //Volt = readADC * 400/4096; // Calculate volt from potentiometer for amplitude testing
          //if (Volt < 2) Volt = 1;   //Sets Volt to 1 if less than 2
          //N_current = 1500 ;
 
-         float max_step = 25;      // Ramp of speed control
-         if (N_current < N_target) {  //If statement for speed ramp in both directions
-                 N_current += max_step;
-                 if (N_current > N_target) N_current = N_target;
-         } else if (N_current > N_target) {
-                 N_current -= max_step;
-                 if (N_current < N_target) N_current = N_target;
-             }
 
-    	if (N_current < 11) N_current = 0; //Sets the speed to 0 if the RPM current is less than 11
-    	if (N_current > 1489) N_current = 1500; //Sets the speed to 1500 if the RPM current is more than 1489
+         uint16_t step_up = 24;      // Step size of ramp up for speed control
+         uint16_t step_down = 79;    // Step size of ramp down for speed control
+         if (N_target > N_current + step_up) //If statement for speed ramp in both directions
+             N_current += step_up;
+         else if (N_target < N_current - step_down)
+             N_current -= step_down;
+         else
+             N_current = N_target;
 
-         freq_sin = 2.25*(4*N_current/120);
-         freq_sine = freq_sin/2.25;
+    	if (N_current < 11 && N_target < 11) N_current = 0; //Sets the speed to 0 if the RPM current is less than 11
+    	if (N_current > 1176 && N_target < 1176) N_current = 1183; //Sets the speed to 1500 if the RPM current is more than 1489
 
+         freq_sin = 2.25*(N_current*4)/120;
          V_RL = freq_sine*8;   //RMS line to line voltage
          V_PP = V_RL*sqrt(2)/sqrt(3);   //peak phase voltage
 
     }
 }
-
-
-
 
 
 // Callback: timer has rolled over
